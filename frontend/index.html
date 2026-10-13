@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Distributed Bank</title>
+<style>
+body{font-family:Arial;max-width:600px;margin:30px auto;padding:0 15px}
+input,button{display:block;width:100%;margin:6px 0;padding:8px;box-sizing:border-box}
+button{background:#1a73e8;color:#fff;border:none;cursor:pointer}
+h2{border-bottom:2px solid #1a73e8;padding-bottom:4px}
+#out{background:#f4f4f4;padding:10px;min-height:30px;white-space:pre-wrap}
+</style>
+</head>
+<body>
+<h1>Distributed Bank</h1>
+
+<div id="out">Results appear here...</div>
+
+<h2>Register / Login</h2>
+<input id="fullName" placeholder="Name">
+<input id="email" placeholder="Email">
+<input id="password" type="password" placeholder="Password">
+<button onclick="call('http://localhost:5001/register')">Register</button>
+<button onclick="call('http://localhost:5001/login')">Login</button>
+
+<h2>Account</h2>
+<input id="custId" placeholder="Customer ID">
+<button onclick="call('http://localhost:5002/accounts','POST',{customer_id:+custId.value,type:'savings'})">Create Account</button>
+<input id="accNo" placeholder="Account Number">
+<button onclick="show('http://localhost:5002/accounts/'+accNo.value)">Check Balance</button>
+
+<h2>Transactions</h2>
+<input id="amount" placeholder="Amount">
+<button onclick="txn('deposit')">Deposit</button>
+<button onclick="txn('withdraw')">Withdraw</button>
+<input id="toAcc" placeholder="Transfer To (A/c No)">
+<button onclick="txn('transfer')">Transfer</button>
+<button onclick="show('http://localhost:5003/transactions/'+accNo.value)">History</button>
+
+<script>
+async function show(url){
+  const r=await fetch(url);
+  const j=await r.json();
+  out.textContent=JSON.stringify(j,null,2);
+}
+async function call(url,method='POST',body){
+  body=body||{name:fullName.value,email:email.value,password:password.value};
+  const r=await fetch(url,{method,headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const j=await r.json();
+  out.textContent=JSON.stringify(j,null,2);
+  if(j.account_number)accNo.value=j.account_number;
+}
+function txn(t){
+  if(t==='transfer')
+    call('http://localhost:5003/transfer','POST',{from_account:+accNo.value,to_account:+toAcc.value,amount:+amount.value});
+  else
+    call('http://localhost:5003/'+t,'POST',{account_number:+accNo.value,amount:+amount.value});
+}
+</script>
+</body>
+</html>
